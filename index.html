@@ -1,1168 +1,1192 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Volume2, Check, X, Menu, Mic, Loader2 } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英文口說練習系統</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-const App = () => {
-  const chapters = [
-    {
-      id: 1,
-      name: "第一章 週末/交通/旅行情境",
-      pairs: [
-        {
-          q: "What are you going to do this weekend?",
-          qCh: "你週末打算做什麼?",
-          answers: [
-            { a: "I'm going to visit the night market.", aCh: "我要去逛夜市。" },
-            { a: "I'm going to Taipei.", aCh: "我要去台北。" }
-          ]
-        },
-        {
-          q: "Are you going to take a highway bus?",
-          qCh: "你要搭國道客運嗎?",
-          answers: [
-            { a: "Yes, I am.", aCh: "是的，我要搭國道客運。" },
-            { a: "No, I am going to take a high speed rail.", aCh: "不，我會搭高鐵。" }
-          ]
-        },
-        {
-          q: "How much is the train ticket from Taichung to Taipei?",
-          qCh: "台中到台北的火車票多少錢?",
-          answers: [
-            { a: "It is about $350 dollars.", aCh: "大約是350元。" }
-          ]
-        },
-        {
-          q: "What happened?",
-          qCh: "發生什麼事了?",
-          answers: [
-            { a: "My flight was canceled.", aCh: "我的班機被取消了。" },
-            { a: "My train was delayed.", aCh: "我的火車延誤了。" }
-          ]
-        },
-        {
-          q: "How do I get there?",
-          qCh: "我要怎麼去那裡?",
-          answers: [
-            { a: "You can take the subway.", aCh: "你可以搭地鐵。" },
-            { a: "Go straight and turn left/right.", aCh: "直走然後左轉/右轉。" }
-          ]
-        },
-      ]
-    },
-    {
-      id: 2,
-      name: "第二章 點餐/購物情境",
-      pairs: [
-        {
-          q: "How much is it?",
-          qCh: "這個多少錢?",
-          answers: [
-            { a: "It's 20 dollars.", aCh: "20元。" }
-          ]
-        },
-        {
-          q: "How much are they?",
-          qCh: "這些多少錢?",
-          answers: [
-            { a: "They're 50 dollars.", aCh: "50元。" }
-          ]
-        },
-        {
-          q: "Where are you?",
-          qCh: "你在哪裡?",
-          answers: [
-            { a: "I am in the restaurant.", aCh: "我在餐廳。" }
-          ]
-        },
-        {
-          q: "May I take your order?",
-          qCh: "我可以幫您點餐嗎?",
-          answers: [
-            { a: "I would like a hamburger, a salad.", aCh: "我要一個漢堡和一份沙拉。" }
-          ]
-        },
-        {
-          q: "Anything else?",
-          qCh: "還需要其他的嗎?",
-          answers: [
-            { a: "No. Thank you. That's all.", aCh: "不用了，謝謝。就這樣。" },
-            { a: "I'll take some fries as well.", aCh: "我還要一些薯條。" }
-          ]
-        },
-        {
-          q: "For here or to go?",
-          qCh: "內用還是外帶?",
-          answers: [
-            { a: "To go. Please.", aCh: "外帶，謝謝。" },
-            { a: "For here, thanks.", aCh: "內用，謝謝。" }
-          ]
-        },
-      ]
-    },
-    {
-      id: 3,
-      name: "Bonus-1 飯店 / 住宿",
-      type: 'sentence_list',
-      sentences: [
-        { en: "I need to take a shower.", ch: "我需要洗澡。" },
-        { en: "May I ask if those drinks in the fridge are free?", ch: "請問冰箱裡的飲料是免費的嗎？" }
-      ]
-    },
-    {
-      id: 4,
-      name: "Bonus-2 餐廳用語",
-      type: 'sentence_list',
-      sentences: [
-        { en: "I feel like Thai food.", ch: "我想吃泰國菜。" },
-        { en: "I’d like to order something else.", ch: "我想點別的東西。" },
-        { en: "What’s the name of the restaurant?", ch: "這家餐廳的名字是什麼？" },
-        { en: "Can I make a reservation?", ch: "我可以預約嗎？" },
-        { en: "I have a reservation.", ch: "我有預約。" },
-        { en: "For two at 7 p.m. under the name Mr. Chen", ch: "預約晚上七點兩位，名字是陳先生" },
-        { en: "I prefer a window seat.", ch: "我比較喜歡靠窗座位。" },
-        { en: "I prefer an aisle seat.", ch: "我比較喜歡靠走道座位。" },
-        { en: "Is this seat available?", ch: "這個座位有人嗎？" },
-        { en: "Do you prefer rice or noodles?", ch: "你比較喜歡飯還是麵？" },
-        { en: "Which one do you recommend?", ch: "你推薦哪一個？" },
-        { en: "Can I take a look?", ch: "我可以看一下嗎？" }
-      ]
-    },
-    {
-      id: 5,
-      name: "Bonus-3 問路 / 交通 / 觀光",
-      type: 'sentence_list',
-      sentences: [
-        { en: "Do you know where a convenience store is?", ch: "你知道便利商店在哪裡嗎？" },
-        { en: "Could you show me where it is on the map?", ch: "你可以在地圖上指給我看嗎？" },
-        { en: "How long does it take?", ch: "要花多久時間？" },
-        { en: "Do you have any souvenir recommendations?", ch: "你有推薦的紀念品嗎？" },
-        { en: "How do I get there?", ch: "我要怎麼去那裡？" }
-      ]
-    },
-    {
-      id: 6,
-      name: "Bonus-4 結帳與帳單",
-      type: 'sentence_list',
-      sentences: [
-        { en: "Can I get the check, please?", ch: "麻煩請給我帳單。" },
-        { en: "Can I have the bill, please?", ch: "麻煩請給我帳單。" },
-        { en: "Can I pay by credit card?", ch: "我可以用信用卡付款嗎？" },
-        { en: "Can I use Apple Pay?", ch: "我可以使用 Apple Pay 嗎？" }
-      ]
-    },
-    {
-      id: 7,
-      name: "Bonus-5 提需求",
-      type: 'sentence_list',
-      sentences: [
-        { en: "Can I get a pillow, please?", ch: "可以請你給我一個枕頭嗎？" },
-        { en: "Can you give me a blanket?", ch: "可以請你給我一條毯子嗎？" },
-        { en: "Could you help me with my luggage?", ch: "可以請你幫我拿行李嗎？" },
-        { en: "Can I have the Wi-Fi password?", ch: "可以給我 Wi-Fi 密碼嗎？" }
-      ]
-    }
-  ];
-
-  const [selectedChapters, setSelectedChapters] = useState([1, 2, 3, 4, 5, 6, 7]);
-  const [activeTab, setActiveTab] = useState('practice');
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState(null);
-  const [confirmedAnswer, setConfirmedAnswer] = useState(null);
-  const [flippedCards, setFlippedCards] = useState(new Set());
-  const [score, setScore] = useState({ correct: 0, total: 0 });
-  const [bonusPracticeType, setBonusPracticeType] = useState('seeChinese_chooseEnglish');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  const [isListening, setIsListening] = useState(false);
-  const [currentListeningIndex, setCurrentListeningIndex] = useState(null);
-  const recognitionRef = useRef(null);
-
-  // Function to shuffle an array (Fisher-Yates)
-  const shuffleArray = (array) => {
-    let currentIndex = array.length,  randomIndex;
-    // While there remain elements to shuffle.
-    while (currentIndex != 0) {
-      // Pick a remaining element.
-      randomIndex = Math.floor(Math.random() * currentIndex);
-      currentIndex--;
-      // And swap it with the current element.
-      [array[currentIndex], array[randomIndex]] = [
-        array[randomIndex], array[currentIndex]];
-    }
-    return array;
-  };
-
-  const activePairs = useMemo(() => {
-    const expandedPairs = [];
-    chapters
-      .filter(ch => selectedChapters.includes(ch.id))
-      .forEach(ch => {
-        if (ch.type === 'sentence_list') {
-            ch.sentences.forEach(sentence => {
-                expandedPairs.push({
-                    q: sentence.en,
-                    qCh: sentence.ch,
-                    a: sentence.en, // The answer is the sentence itself for practice mode
-                    aCh: sentence.ch,
-                    type: 'sentence_list',
-                    chapterId: ch.id // <-- 加上章節 ID
-                });
-            });
-        } else { // Existing logic for Q&A pairs
-            ch.pairs.forEach(pair => {
-              pair.answers.forEach(answer => {
-                expandedPairs.push({
-                  q: pair.q,
-                  qCh: pair.qCh,
-                  a: answer.a,
-                  aCh: answer.aCh,
-                  type: 'qa',
-                  chapterId: ch.id // <-- 加上章節 ID
-                });
-              });
-            });
+    <style>
+        .rotate-y-180 {
+            transform: rotateY(180deg);
         }
-      });
-    // Shuffle the expanded pairs
-    return shuffleArray(expandedPairs);
-  }, [selectedChapters]);
+        .preserve-3d {
+            transform-style: preserve-3d;
+        }
+        .backface-hidden {
+            backface-visibility: hidden;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
 
-  const shuffledAnswers = useMemo(() => {
-    if (activePairs.length === 0) return [];
-    if (currentQuestionIndex >= activePairs.length) return []; // 安全檢查
+    <div id="root"></div>
 
-    const correctAnswer = activePairs[currentQuestionIndex];
-    const currentChapterId = correctAnswer.chapterId; // <-- 取得目前問題的章節 ID
+    <script type="text/babel">
+        const { useState, useMemo, useRef, useEffect } = React;
 
-    // --- 策略 1: 優先從「同一個章節」找答案 ---
-    let otherAnswers = activePairs.filter((pair, idx) => 
-        idx !== currentQuestionIndex && 
-        pair.a !== correctAnswer.a &&
-        pair.chapterId === currentChapterId // <-- 關鍵修改：只篩選同章節的
-    );
-
-    // 隨機排序並取 2 個
-    let randomOthers = otherAnswers.sort(() => Math.random() - 0.5).slice(0, 2);
-
-    // --- 策略 2: 如果同章節不夠 2 個答案，才從「所有章節」補足 ---
-    if (randomOthers.length < 2) {
-        const needed = 2 - randomOthers.length;
-
-        // 從「其他章節」找答案
-        const globalOtherAnswers = activePairs.filter((pair, idx) => 
-            idx !== currentQuestionIndex && 
-            pair.a !== correctAnswer.a &&
-            pair.chapterId !== currentChapterId && // 排除目前章節
-            !randomOthers.some(oa => oa.a === pair.a) // 排除已選中的
+        // --- 內建圖示元件 (替代 lucide-react) ---
+        const IconWrapper = ({ children, className, size = 24, onClick }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} onClick={onClick}>
+                {children}
+            </svg>
         );
 
-        const globalRandom = globalOtherAnswers.sort(() => Math.random() - 0.5).slice(0, needed);
-        
-        randomOthers = [...randomOthers, ...globalRandom];
-    }
-    
-    // --- 策略 3: 絕對的後備 (如果總共可選的答案也不夠) ---
-    // (這種情況很少見，但以防萬一)
-    if (randomOthers.length < 2) {
-         const absoluteNeeded = 2 - randomOthers.length;
-         // 從所有答案中 (不分章節) 再次篩選
-         const absoluteFallback = activePairs.filter((pair, idx) => 
-            idx !== currentQuestionIndex && 
-            pair.a !== correctAnswer.a &&
-            !randomOthers.some(oa => oa.a === pair.a) // 排除已選中的
-         );
-         const absoluteRandom = absoluteFallback.sort(() => Math.random() - 0.5).slice(0, absoluteNeeded);
-         randomOthers = [...randomOthers, ...absoluteRandom];
-    }
+        const Volume2 = (props) => (
+            <IconWrapper {...props}>
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            </IconWrapper>
+        );
+        const Check = (props) => (
+            <IconWrapper {...props}>
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </IconWrapper>
+        );
+        const X = (props) => (
+            <IconWrapper {...props}>
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </IconWrapper>
+        );
+        const Menu = (props) => (
+            <IconWrapper {...props}>
+                <line x1="4" y1="12" x2="20" y2="12"></line>
+                <line x1="4" y1="6" x2="20" y2="6"></line>
+                <line x1="4" y1="18" x2="20" y2="18"></line>
+            </IconWrapper>
+        );
+        const Mic = (props) => (
+            <IconWrapper {...props}>
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" y1="19" x2="12" y2="23"></line>
+                <line x1="8" y1="23" x2="16" y2="23"></line>
+            </IconWrapper>
+        );
+        const Loader2 = ({ className, size }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`animate-spin ${className}`}>
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+            </svg>
+        );
+        // -------------------------------------------
 
-    const choices = [correctAnswer, ...randomOthers];
-
-    // --- 最終安全檢查：確保一定有 3 個選項 ---
-    // (如果所有選中的章節中，總共的獨立答案少於 3 個)
-    let choiceIndex = 0;
-    while (choices.length < 3 && activePairs.length > 0) {
-        const padAnswer = activePairs[choiceIndex % activePairs.length];
-        // 只有當答案的英文 (a) 不重複時才加入
-        if (!choices.some(c => c.a === padAnswer.a)) {
-            choices.push(padAnswer);
-        }
-        choiceIndex++;
-        if (choiceIndex > activePairs.length * 2) break; // 防止無限迴圈
-    }
-
-    return choices.sort(() => Math.random() - 0.5);
-  }, [currentQuestionIndex, activePairs]);
-
-  const currentQuestion = activePairs.length > 0 ? activePairs[currentQuestionIndex] : null;
-
-  // --- 口說測驗 (Speaking Quiz) 相關 state 和 函式 ---
-
-  const [speakingQuiz, setSpeakingQuiz] = useState({
-    questions: [], // 儲存 5 個問題
-    userAnswers: Array(5).fill(''), // 儲存 5 個使用者的回答
-    feedback: Array(5).fill(''), // 儲存 5 個 AI 的回饋
-    isLoading: false // 正在等待 AI 回應
-  });
-
-  // 重新產生 5 題新的測驗
-  const startNewQuiz = React.useCallback(() => {
-    let newQuestions = [];
-    if (activePairs.length === 0) {
-        setSpeakingQuiz({
-            questions: [],
-            userAnswers: Array(5).fill(''),
-            feedback: Array(5).fill(''),
-            isLoading: false
-         });
-         return;
-    }
-    
-    // 從 activePairs 中隨機選取 5 題
-    newQuestions = shuffleArray([...activePairs]).slice(0, 5);
-
-    // 如果題目不足 5 題，用現有的題目補滿 (非理想情況，但確保陣列長度)
-    if (newQuestions.length < 5 && newQuestions.length > 0) {
-        const paddingNeeded = 5 - newQuestions.length;
-        for(let i = 0; i < paddingNeeded; i++) {
-            newQuestions.push(newQuestions[i % newQuestions.length]); 
-        }
-    } else if (newQuestions.length === 0) {
-         // 如果真的 1 題都沒有 (例如沒選章節)
-         newQuestions = Array(5).fill({ q: "沒有題目", qCh: "請先選擇章節", a: "", aCh: "" });
-    }
-
-    setSpeakingQuiz({
-      questions: newQuestions,
-      userAnswers: Array(5).fill(''),
-      feedback: Array(5).fill(''),
-      isLoading: false
-    });
-  }, [activePairs]);
-
-  // 當 activePairs 變動時 (例如重選章節)，重新產生測驗
-  React.useEffect(() => {
-    if (activePairs.length > 0) {
-      startNewQuiz();
-    }
-  }, [activePairs, startNewQuiz]);
-
-  // --- 語音辨識設定 (Web Speech API) ---
-  useEffect(() => {
-    // 檢查瀏覽器是否支援
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = false; // 只辨識一次
-      recognition.lang = 'en-US';     // 辨識英文
-      recognition.interimResults = false; // 只回傳最終結果
-      recognitionRef.current = recognition;
-    } else {
-      console.warn("此瀏覽器不支援 Web Speech API (語音辨識)。");
-    }
-
-    // 元件卸載時停止辨識
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-    };
-  }, []);
-
-  // 開始/停止 語音辨識
-  const toggleListening = (index) => {
-    if (!recognitionRef.current) {
-      console.error("語音辨識未初始化或不受支援。");
-      // 可以在此處顯示一個不支援的提示訊息
-      return;
-    }
-
-    const recognition = recognitionRef.current;
-
-    // 如果正在辨識中
-    if (isListening) {
-      recognition.stop();
-      setIsListening(false);
-      setCurrentListeningIndex(null);
-    } else {
-      // 開始新的辨識
-      setCurrentListeningIndex(index);
-      setIsListening(true);
-
-      // 辨識結果
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        
-        // --- 這是修改的部分 ---
-        // 使用 functional update 來安全地取得前一個 state 並附加文字
-        setSpeakingQuiz(prev => {
-          const newAnswers = [...prev.userAnswers];
-          const currentAnswer = prev.userAnswers[index] || ''; // 取得當前的答案
-          
-          // 如果已有內容，加上一個空格來分隔
-          const separator = currentAnswer.trim().length > 0 ? ' ' : ''; 
-          
-          newAnswers[index] = currentAnswer + separator + transcript; // 附加新辨識的文字
-          
-          return { ...prev, userAnswers: newAnswers };
-        });
-        // --- 修改結束 ---
-      };
-
-      // 辨識結束 (不論是自動結束還是手動 stop)
-      recognition.onend = () => {
-        setIsListening(false);
-        setCurrentListeningIndex(null);
-      };
-
-      // 辨識錯誤
-      recognition.onerror = (event) => {
-        console.error("語音辨識錯誤:", event.error);
-        if (event.error === 'not-allowed') {
-          alert("麥克風權限被拒絕。請檢查瀏覽器設定。");
-        }
-        setIsListening(false);
-        setCurrentListeningIndex(null);
-      };
-
-      try {
-        recognition.start();
-      } catch (e) {
-        console.error("啟動語音辨識失敗:", e);
-        setIsListening(false);
-        setCurrentListeningIndex(null);
-      }
-    }
-  };
-
-
-  // 呼叫 Gemini API 取得 AI 回饋
-  const getAIFeedback = async (question, userAnswer) => {
-    const systemPrompt = "你是位友善、鼓勵學生的英文家教。你的任務是評估學生的英文回答，並提供具體的改進建議。請盡量簡潔。就算學生的答案很簡單，也要鼓勵他們並建議一個更完整或更自然的說法。請用繁體中文回答。你的回覆必須是自然的段落，不要使用任何標題、項目符號、星號(**)或井字號(###)等 markdown 標記。";
-    
-    // 如果使用者未回答
-    if (!userAnswer || userAnswer.trim() === '') {
-      return `你沒有回答喔！試著說說看：「${question.a}」`;
-    }
-
-    // 根據問題類型 (一般問答 vs. bonus 句子) 調整提示
-    const questionPrompt = question.type === 'sentence_list'
-      ? `中文提示: "${question.qCh}"\n(情境是整句翻譯，標準答案是 "${question.a}")`
-      : `英文問題: "${question.q}" (中文: ${question.qCh})\n標準回答範例: "${question.a}"`;
-    
-    // --- 這是修改的部分 ---
-    const userQuery = `
-      ${questionPrompt}
-      學生的回答: "${userAnswer}"
-
-      請評估學生的回答。
-      1.  回覆請盡量簡潔。
-      2.  提供簡短、鼓勵性的意見 (例如：說得不錯！)。
-      3.  如果學生的答案有誤，請溫和地修正，並說明原因。
-      4.  如果學生的答案大致正確，可以建議一個「更自然但同樣簡單」的說法。
-      5.  最後，請提供一個「簡單、完整且正確」的範例說法，讓學生參考。
-      6.  (重要) 不要提供太難或太長的句子，這些學生是初學者。
-      7.  (重要) 請用自然的段落回覆，不要使用標題、項目符號或 markdown 標記 (像是 ### 或 **)。
-    `;
-    // --- 修改結束 ---
-
-    const apiKey = ""; // API key will be provided by the environment
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-
-    const payload = {
-      contents: [{ parts: [{ text: userQuery }] }],
-      systemInstruction: {
-        parts: [{ text: systemPrompt }]
-      },
-    };
-
-    try {
-      // 簡易重試機制 (最多 3 次)
-      let response;
-      for (let i = 0; i < 3; i++) {
-        response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (response.ok) break; // 成功
-        if (response.status === 429) { // 速率限制
-             await new Promise(res => setTimeout(res, 1500 * (i + 1))); // 指數退避
-        } else if (response.status >= 500) { // 伺服器錯誤
-            await new Promise(res => setTimeout(res, 1000 * (i + 1)));
-        }
-        else {
-            break; // 其他客戶端錯誤 (如 400)，不需要重試
-        }
-      }
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        console.error("API Error Response:", errorBody);
-        throw new Error(`API 請求失敗，狀態碼: ${response.status}`);
-      }
-
-      const result = await response.json();
-      const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-
-      if (text) {
-        return text;
-      } else {
-        console.warn("API response was successful but missing text content.", result);
-        return "抱歉，AI 分析時遇到一點小問題，回傳的內容是空的。";
-      }
-    } catch (error) {
-      console.error("Error getting AI feedback:", error);
-      return `分析失敗: ${error.message}。請檢查網路連線或稍後再試。`;
-    }
-  };
-
-  // 處理測驗送出
-  const handleQuizSubmit = async () => {
-    setSpeakingQuiz(prev => ({ ...prev, isLoading: true, feedback: Array(5).fill('') }));
-    
-    // 為 5 個問題建立 API 請求
-    const feedbackPromises = speakingQuiz.questions.map((q, i) => 
-      getAIFeedback(q, speakingQuiz.userAnswers[i])
-    );
-    
-    // 等待所有請求完成 (不論成功或失敗)
-    const results = await Promise.allSettled(feedbackPromises);
-    
-    // 整理回饋
-    const newFeedback = results.map(res => 
-      res.status === 'fulfilled' ? res.value : `錯誤: ${res.reason?.message || '未知錯誤'}`
-    );
-    
-    setSpeakingQuiz(prev => ({ ...prev, isLoading: false, feedback: newFeedback }));
-  };
-
-  // 處理使用者輸入
-  const handleUserAnswerChange = (index, value) => {
-    const newAnswers = [...speakingQuiz.userAnswers];
-    newAnswers[index] = value;
-    setSpeakingQuiz(prev => ({ ...prev, userAnswers: newAnswers }));
-  };
-
-  // --- 結束 (口說測驗) ---
-
-
-  const speak = (text) => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel(); // Stop any previous speech
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-US';
-
-      // Find a natural female voice
-      const voices = window.speechSynthesis.getVoices();
-      // Try to find a high-quality Google voice first which is often female
-      let selectedVoice = voices.find(voice => voice.name === 'Google US English');
-      // Fallback to other female voices if Google voice is not found
-      if (!selectedVoice) {
-          selectedVoice = voices.find(voice => voice.lang === 'en-US' && voice.name.toLowerCase().includes('female'));
-      }
-      // Another fallback just in case the name doesn't contain "female"
-      if (!selectedVoice) {
-          selectedVoice = voices.find(voice => voice.lang === 'en-US' && voice.gender === 'female');
-      }
-
-      if (selectedVoice) {
-        utterance.voice = selectedVoice;
-      }
-
-      window.speechSynthesis.speak(utterance);
-    } else {
-      console.error("Sorry, your browser doesn't support text-to-speech.");
-    }
-  };
-
-  const toggleChapter = (chapterId) => {
-    setSelectedChapters(prev =>
-        prev.includes(chapterId)
-          ? prev.filter(id => id !== chapterId)
-        : [...prev, chapterId]
-    );
-    setCurrentQuestionIndex(0);
-    setSelectedAnswer(null);
-    setConfirmedAnswer(null);
-    setScore({ correct: 0, total: 0 });
-    setFlippedCards(new Set());
-    // 重設口說測驗
-    setSpeakingQuiz({
-      questions: [],
-      userAnswers: Array(5).fill(''),
-      feedback: Array(5).fill(''),
-      isLoading: false
-    });
-  };
-
-  const toggleFlip = (cardId) => {
-    setFlippedCards(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(cardId)) {
-        newSet.delete(cardId);
-      } else {
-        newSet.add(cardId);
-      }
-      return newSet;
-    });
-  };
-
-  const handleAnswerSelect = (answer) => {
-    if (confirmedAnswer) return;
-    setSelectedAnswer(answer);
-  };
-
-  const handleConfirm = () => {
-    if (!selectedAnswer || confirmedAnswer) return;
-        setConfirmedAnswer(selectedAnswer);
-    const isCorrect = selectedAnswer.a === currentQuestion.a;
-        if (isCorrect) {
-      setScore(prev => ({ correct: prev.correct + 1, total: prev.total + 1 }));
-    } else {
-      setScore(prev => ({ ...prev, total: prev.total + 1 }));
-    }
-        setTimeout(() => {
-      if (currentQuestionIndex < activePairs.length - 1) {
-        setCurrentQuestionIndex(prev => prev + 1);
-        setSelectedAnswer(null);
-        setConfirmedAnswer(null);
-        setFlippedCards(new Set());
-      }
-    }, 2000);
-  };
-
-  const Card = ({ content, translation, id, onClick, selected, isCorrect, isConfirmed, speakText, isSpeakable = true, textToSpeak }) => {
-    const isFlipped = flippedCards.has(id);
-
-    const handleSpeak = (e) => {
-        e.stopPropagation(); // Prevent card from flipping
-        speakText(textToSpeak || content);
-    };
-
-        return (
-      <div
-           className={`relative ${
-            selected ? 'ring-4 ring-blue-400 scale-105' : ''
-           } ${
-            isConfirmed !== null ? (isCorrect ? 'ring-4 ring-green-500' : isConfirmed ? 'ring-4 ring-red-500' : '') : ''
-           } w-64 h-40 sm:w-72 sm:h-48 cursor-pointer transition-all duration-300 flex items-center justify-center`}
-        onClick={onClick}
-      >
-        <div className={`absolute inset-0 transition-transform duration-500 transform ${isFlipped ? 'rotate-y-180' : ''}`}
-             style={{ transformStyle: 'preserve-3d' }}>
-          {/* Front */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 flex items-center justify-center"
-               style={{ backfaceVisibility: 'hidden' }}>
-            <p className="text-white text-center font-medium text-base sm:text-lg px-4 sm:px-8">{content}</p>
-            {isSpeakable &&
-              <button
-                  onClick={handleSpeak}
-                  className="absolute bottom-2 right-2 p-2 rounded-full bg-black bg-opacity-20 hover:bg-opacity-40 transition-colors z-20"
-                  aria-label={`Speak: ${content}`}
-              >
-                  <Volume2 className="text-white" size={18} />
-              </button>
+        const App = () => {
+          const chapters = [
+            {
+              id: 1,
+              name: "第一章 週末/交通/旅行情境",
+              pairs: [
+                {
+                  q: "What are you going to do this weekend?",
+                  qCh: "你週末打算做什麼?",
+                  answers: [
+                    { a: "I'm going to visit the night market.", aCh: "我要去逛夜市。" },
+                    { a: "I'm going to Taipei.", aCh: "我要去台北。" }
+                  ]
+                },
+                {
+                  q: "Are you going to take a highway bus?",
+                  qCh: "你要搭國道客運嗎?",
+                  answers: [
+                    { a: "Yes, I am.", aCh: "是的，我要搭國道客運。" },
+                    { a: "No, I am going to take a high speed rail.", aCh: "不，我會搭高鐵。" }
+                  ]
+                },
+                {
+                  q: "How much is the train ticket from Taichung to Taipei?",
+                  qCh: "台中到台北的火車票多少錢?",
+                  answers: [
+                    { a: "It is about $350 dollars.", aCh: "大約是350元。" }
+                  ]
+                },
+                {
+                  q: "What happened?",
+                  qCh: "發生什麼事了?",
+                  answers: [
+                    { a: "My flight was canceled.", aCh: "我的班機被取消了。" },
+                    { a: "My train was delayed.", aCh: "我的火車延誤了。" }
+                  ]
+                },
+                {
+                  q: "How do I get there?",
+                  qCh: "我要怎麼去那裡?",
+                  answers: [
+                    { a: "You can take the subway.", aCh: "你可以搭地鐵。" },
+                    { a: "Go straight and turn left/right.", aCh: "直走然後左轉/右轉。" }
+                  ]
+                },
+              ]
+            },
+            {
+              id: 2,
+              name: "第二章 點餐/購物情境",
+              pairs: [
+                {
+                  q: "How much is it?",
+                  qCh: "這個多少錢?",
+                  answers: [
+                    { a: "It's 20 dollars.", aCh: "20元。" }
+                  ]
+                },
+                {
+                  q: "How much are they?",
+                  qCh: "這些多少錢?",
+                  answers: [
+                    { a: "They're 50 dollars.", aCh: "50元。" }
+                  ]
+                },
+                {
+                  q: "Where are you?",
+                  qCh: "你在哪裡?",
+                  answers: [
+                    { a: "I am in the restaurant.", aCh: "我在餐廳。" }
+                  ]
+                },
+                {
+                  q: "May I take your order?",
+                  qCh: "我可以幫您點餐嗎?",
+                  answers: [
+                    { a: "I would like a hamburger, a salad.", aCh: "我要一個漢堡和一份沙拉。" }
+                  ]
+                },
+                {
+                  q: "Anything else?",
+                  qCh: "還需要其他的嗎?",
+                  answers: [
+                    { a: "No. Thank you. That's all.", aCh: "不用了，謝謝。就這樣。" },
+                    { a: "I'll take some fries as well.", aCh: "我還要一些薯條。" }
+                  ]
+                },
+                {
+                  q: "For here or to go?",
+                  qCh: "內用還是外帶?",
+                  answers: [
+                    { a: "To go. Please.", aCh: "外帶，謝謝。" },
+                    { a: "For here, thanks.", aCh: "內用，謝謝。" }
+                  ]
+                },
+              ]
+            },
+            {
+              id: 3,
+              name: "Bonus-1 飯店 / 住宿",
+              type: 'sentence_list',
+              sentences: [
+                { en: "I need to take a shower.", ch: "我需要洗澡。" },
+                { en: "May I ask if those drinks in the fridge are free?", ch: "請問冰箱裡的飲料是免費的嗎？" }
+              ]
+            },
+            {
+              id: 4,
+              name: "Bonus-2 餐廳用語",
+              type: 'sentence_list',
+              sentences: [
+                { en: "I feel like Thai food.", ch: "我想吃泰國菜。" },
+                { en: "I’d like to order something else.", ch: "我想點別的東西。" },
+                { en: "What’s the name of the restaurant?", ch: "這家餐廳的名字是什麼？" },
+                { en: "Can I make a reservation?", ch: "我可以預約嗎？" },
+                { en: "I have a reservation.", ch: "我有預約。" },
+                { en: "For two at 7 p.m. under the name Mr. Chen", ch: "預約晚上七點兩位，名字是陳先生" },
+                { en: "I prefer a window seat.", ch: "我比較喜歡靠窗座位。" },
+                { en: "I prefer an aisle seat.", ch: "我比較喜歡靠走道座位。" },
+                { en: "Is this seat available?", ch: "這個座位有人嗎？" },
+                { en: "Do you prefer rice or noodles?", ch: "你比較喜歡飯還是麵？" },
+                { en: "Which one do you recommend?", ch: "你推薦哪一個？" },
+                { en: "Can I take a look?", ch: "我可以看一下嗎？" }
+              ]
+            },
+            {
+              id: 5,
+              name: "Bonus-3 問路 / 交通 / 觀光",
+              type: 'sentence_list',
+              sentences: [
+                { en: "Do you know where a convenience store is?", ch: "你知道便利商店在哪裡嗎？" },
+                { en: "Could you show me where it is on the map?", ch: "你可以在地圖上指給我看嗎？" },
+                { en: "How long does it take?", ch: "要花多久時間？" },
+                { en: "Do you have any souvenir recommendations?", ch: "你有推薦的紀念品嗎？" },
+                { en: "How do I get there?", ch: "我要怎麼去那裡？" }
+              ]
+            },
+            {
+              id: 6,
+              name: "Bonus-4 結帳與帳單",
+              type: 'sentence_list',
+              sentences: [
+                { en: "Can I get the check, please?", ch: "麻煩請給我帳單。" },
+                { en: "Can I have the bill, please?", ch: "麻煩請給我帳單。" },
+                { en: "Can I pay by credit card?", ch: "我可以用信用卡付款嗎？" },
+                { en: "Can I use Apple Pay?", ch: "我可以使用 Apple Pay 嗎？" }
+              ]
+            },
+            {
+              id: 7,
+              name: "Bonus-5 提需求",
+              type: 'sentence_list',
+              sentences: [
+                { en: "Can I get a pillow, please?", ch: "可以請你給我一個枕頭嗎？" },
+                { en: "Can you give me a blanket?", ch: "可以請你給我一條毯子嗎？" },
+                { en: "Could you help me with my luggage?", ch: "可以請你幫我拿行李嗎？" },
+                { en: "Can I have the Wi-Fi password?", ch: "可以給我 Wi-Fi 密碼嗎？" }
+              ]
             }
-          </div>
-          {/* Back */}
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-lg p-4 sm:p-6 flex items-center justify-center rotate-y-180"
-               style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
-            <p className="text-white text-center font-medium text-base sm:text-lg">{translation}</p>
-          </div>
-        </div>
-        {isConfirmed !== null && (
-          <div className="absolute -top-2 -right-2 z-10">
-            {isCorrect ? (
-              <div className="bg-green-500 rounded-full p-2">
-                <Check className="text-white" size={20} />
-              </div>
-            ) : isConfirmed ? (
-              <div className="bg-red-500 rounded-full p-2">
-                <X className="text-white" size={20} />
-              </div>
-            ) : null}
-          </div>
-        )}
-      </div>
-    );
-  };
+          ];
 
-  if (activePairs.length === 0) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-purple-100 p-8 flex items-center justify-center">
-        <div className="max-w-xl w-full">
-          <h1 className="text-3xl sm:text-4xl font-bold text-center mb-8 text-indigo-900">英文口說練習系統</h1>
-          <div className="bg-white rounded-lg shadow-xl p-4 sm:p-8">
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">請選擇章節開始學習</h2>
-            <div className="space-y-3">
-              {chapters.map(chapter => (
-                <label key={chapter.id} className="flex items-center space-x-3 p-3 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={selectedChapters.includes(chapter.id)}
-                    onChange={() => toggleChapter(chapter.id)}
-                    className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
-                  />
-                  <span className="text-base sm:text-lg font-medium text-gray-700">{chapter.name}</span>
-                  <span className="ml-auto text-sm text-gray-500">
-                     {chapter.type === 'sentence_list' ? `${chapter.sentences.length} 句` : `${chapter.pairs.length} 組對話`}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+          const [selectedChapters, setSelectedChapters] = useState([1, 2, 3, 4, 5, 6, 7]);
+          const [activeTab, setActiveTab] = useState('practice');
+          const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+          const [selectedAnswer, setSelectedAnswer] = useState(null);
+          const [confirmedAnswer, setConfirmedAnswer] = useState(null);
+          const [flippedCards, setFlippedCards] = useState(new Set());
+          const [score, setScore] = useState({ correct: 0, total: 0 });
+          const [bonusPracticeType, setBonusPracticeType] = useState('seeChinese_chooseEnglish');
+          const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-purple-100">
-      {/* Sidebar Overlay for mobile */}
-      {isSidebarOpen && (
-        <div
-            onClick={() => setIsSidebarOpen(false)}
-            className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-20"
-            aria-hidden="true"
-        ></div>
-      )}
-      
-      {/* Sidebar */}
-      <div className={`fixed left-0 top-0 h-full w-64 bg-white shadow-2xl p-6 overflow-y-auto z-30 transition-transform transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
-        <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-indigo-900">章節選擇</h2>
-            <button onClick={() => setIsSidebarOpen(false)} className="md:hidden p-1 text-gray-500 hover:text-gray-800">
-                <X className="h-6 w-6" />
-            </button>
-        </div>
-        <div className="space-y-3">
-          {chapters.map(chapter => (
-            <label key={chapter.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-indigo-50 cursor-pointer transition">
-              <input
-                type="checkbox"
-                checked={selectedChapters.includes(chapter.id)}
-                onChange={() => toggleChapter(chapter.id)}
-                className="w-5 h-5 text-indigo-600 mt-1 rounded focus:ring-indigo-500"
-              />
-              <div>
-                <span className="font-medium text-gray-800 block">{chapter.name}</span>
-                <span className="text-xs text-gray-500">
-                  {chapter.type === 'sentence_list' ? `${chapter.sentences.length} 句` : `${chapter.pairs.length} 組對話`}
-                </span>
-              </div>
-            </label>
-          ))}
-        </div>
-        {activeTab === 'practice' && (
-          <div className="mt-8 p-4 bg-indigo-50 rounded-lg">
-            <h3 className="font-bold text-indigo-900 mb-2">得分統計</h3>
-            <p className="text-3xl font-bold text-indigo-600">{score.correct} / {score.total}</p>
-            <p className="text-sm text-gray-600">正確率: {score.total > 0 ? Math.round(score.correct / score.total * 100) : 0}%</p>
-          </div>
-        )}
-      </div>
+          const [isListening, setIsListening] = useState(false);
+          const [currentListeningIndex, setCurrentListeningIndex] = useState(null);
+          const recognitionRef = useRef(null);
 
-      {/* Main Content */}
-      <div className="md:ml-64 p-4 sm:p-8">
-        {/* Hamburger Menu for Mobile */}
-        <button
-            onClick={() => setIsSidebarOpen(true)}
-            className="md:hidden fixed top-4 left-4 z-10 p-2 bg-white rounded-full shadow-lg text-indigo-700"
-            aria-label="開啟章節選單"
-        >
-            <Menu className="h-6 w-6" />
-        </button>
+          // Function to shuffle an array (Fisher-Yates)
+          const shuffleArray = (array) => {
+            let currentIndex = array.length,  randomIndex;
+            // While there remain elements to shuffle.
+            while (currentIndex != 0) {
+              // Pick a remaining element.
+              randomIndex = Math.floor(Math.random() * currentIndex);
+              currentIndex--;
+              // And swap it with the current element.
+              [array[currentIndex], array[randomIndex]] = [
+                array[randomIndex], array[currentIndex]];
+            }
+            return array;
+          };
 
-        <h1 className="text-3xl sm:text-4xl font-bold text-center mb-8 text-indigo-900">英文口說練習系統</h1>
-        
-              {/* Tab Navigation */}
-        <div className="flex justify-center mb-8">
-          <div className="bg-white rounded-lg shadow-lg p-2 flex flex-col sm:flex-row gap-2">
-            <button
-              onClick={() => {
-                setActiveTab('learning');
-                setFlippedCards(new Set());
-              }}
-              className={`px-6 py-2 sm:px-8 sm:py-3 rounded-lg font-semibold transition-all ${
-                activeTab === 'learning'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              📚 學習模式
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('practice');
-                setFlippedCards(new Set());
+          const activePairs = useMemo(() => {
+            const expandedPairs = [];
+            chapters
+              .filter(ch => selectedChapters.includes(ch.id))
+              .forEach(ch => {
+                if (ch.type === 'sentence_list') {
+                    ch.sentences.forEach(sentence => {
+                        expandedPairs.push({
+                            q: sentence.en,
+                            qCh: sentence.ch,
+                            a: sentence.en, // The answer is the sentence itself for practice mode
+                            aCh: sentence.ch,
+                            type: 'sentence_list',
+                            chapterId: ch.id 
+                        });
+                    });
+                } else { // Existing logic for Q&A pairs
+                    ch.pairs.forEach(pair => {
+                      pair.answers.forEach(answer => {
+                        expandedPairs.push({
+                          q: pair.q,
+                          qCh: pair.qCh,
+                          a: answer.a,
+                          aCh: answer.aCh,
+                          type: 'qa',
+                          chapterId: ch.id
+                        });
+                      });
+                    });
+                }
+              });
+            // Shuffle the expanded pairs
+            return shuffleArray(expandedPairs);
+          }, [selectedChapters]);
+
+          const shuffledAnswers = useMemo(() => {
+            if (activePairs.length === 0) return [];
+            if (currentQuestionIndex >= activePairs.length) return []; 
+
+            const correctAnswer = activePairs[currentQuestionIndex];
+            const currentChapterId = correctAnswer.chapterId;
+
+            // --- 策略 1: 優先從「同一個章節」找答案 ---
+            let otherAnswers = activePairs.filter((pair, idx) => 
+                idx !== currentQuestionIndex && 
+                pair.a !== correctAnswer.a &&
+                pair.chapterId === currentChapterId 
+            );
+
+            // 隨機排序並取 2 個
+            let randomOthers = otherAnswers.sort(() => Math.random() - 0.5).slice(0, 2);
+
+            // --- 策略 2: 如果同章節不夠 2 個答案，才從「所有章節」補足 ---
+            if (randomOthers.length < 2) {
+                const needed = 2 - randomOthers.length;
+
+                // 從「其他章節」找答案
+                const globalOtherAnswers = activePairs.filter((pair, idx) => 
+                    idx !== currentQuestionIndex && 
+                    pair.a !== correctAnswer.a &&
+                    pair.chapterId !== currentChapterId && 
+                    !randomOthers.some(oa => oa.a === pair.a) 
+                );
+
+                const globalRandom = globalOtherAnswers.sort(() => Math.random() - 0.5).slice(0, needed);
+                
+                randomOthers = [...randomOthers, ...globalRandom];
+            }
+            
+            // --- 策略 3: 絕對的後備 ---
+            if (randomOthers.length < 2) {
+                 const absoluteNeeded = 2 - randomOthers.length;
+                 const absoluteFallback = activePairs.filter((pair, idx) => 
+                    idx !== currentQuestionIndex && 
+                    pair.a !== correctAnswer.a &&
+                    !randomOthers.some(oa => oa.a === pair.a) 
+                 );
+                 const absoluteRandom = absoluteFallback.sort(() => Math.random() - 0.5).slice(0, absoluteNeeded);
+                 randomOthers = [...randomOthers, ...absoluteRandom];
+            }
+
+            const choices = [correctAnswer, ...randomOthers];
+
+            let choiceIndex = 0;
+            while (choices.length < 3 && activePairs.length > 0) {
+                const padAnswer = activePairs[choiceIndex % activePairs.length];
+                if (!choices.some(c => c.a === padAnswer.a)) {
+                    choices.push(padAnswer);
+                }
+                choiceIndex++;
+                if (choiceIndex > activePairs.length * 2) break; 
+            }
+
+            return choices.sort(() => Math.random() - 0.5);
+          }, [currentQuestionIndex, activePairs]);
+
+          const currentQuestion = activePairs.length > 0 ? activePairs[currentQuestionIndex] : null;
+
+          // --- 口說測驗 (Speaking Quiz) 相關 state 和 函式 ---
+
+          const [speakingQuiz, setSpeakingQuiz] = useState({
+            questions: [], 
+            userAnswers: Array(5).fill(''), 
+            feedback: Array(5).fill(''), 
+            isLoading: false 
+          });
+
+          const startNewQuiz = React.useCallback(() => {
+            let newQuestions = [];
+            if (activePairs.length === 0) {
+                setSpeakingQuiz({
+                    questions: [],
+                    userAnswers: Array(5).fill(''),
+                    feedback: Array(5).fill(''),
+                    isLoading: false
+                 });
+                 return;
+            }
+            
+            newQuestions = shuffleArray([...activePairs]).slice(0, 5);
+
+            if (newQuestions.length < 5 && newQuestions.length > 0) {
+                const paddingNeeded = 5 - newQuestions.length;
+                for(let i = 0; i < paddingNeeded; i++) {
+                    newQuestions.push(newQuestions[i % newQuestions.length]); 
+                }
+            } else if (newQuestions.length === 0) {
+                 newQuestions = Array(5).fill({ q: "沒有題目", qCh: "請先選擇章節", a: "", aCh: "" });
+            }
+
+            setSpeakingQuiz({
+              questions: newQuestions,
+              userAnswers: Array(5).fill(''),
+              feedback: Array(5).fill(''),
+              isLoading: false
+            });
+          }, [activePairs]);
+
+          React.useEffect(() => {
+            if (activePairs.length > 0) {
+              startNewQuiz();
+            }
+          }, [activePairs, startNewQuiz]);
+
+          // --- 語音辨識設定 (Web Speech API) ---
+          useEffect(() => {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (SpeechRecognition) {
+              const recognition = new SpeechRecognition();
+              recognition.continuous = false; 
+              recognition.lang = 'en-US';      
+              recognition.interimResults = false; 
+              recognitionRef.current = recognition;
+            } else {
+              console.warn("此瀏覽器不支援 Web Speech API (語音辨識)。");
+            }
+
+            return () => {
+              if (recognitionRef.current) {
+                recognitionRef.current.stop();
+              }
+            };
+          }, []);
+
+          const toggleListening = (index) => {
+            if (!recognitionRef.current) {
+              console.error("語音辨識未初始化或不受支援。");
+              return;
+            }
+
+            const recognition = recognitionRef.current;
+
+            if (isListening) {
+              recognition.stop();
+              setIsListening(false);
+              setCurrentListeningIndex(null);
+            } else {
+              setCurrentListeningIndex(index);
+              setIsListening(true);
+
+              recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                
+                setSpeakingQuiz(prev => {
+                  const newAnswers = [...prev.userAnswers];
+                  const currentAnswer = prev.userAnswers[index] || ''; 
+                  const separator = currentAnswer.trim().length > 0 ? ' ' : ''; 
+                  newAnswers[index] = currentAnswer + separator + transcript; 
+                  return { ...prev, userAnswers: newAnswers };
+                });
+              };
+
+              recognition.onend = () => {
+                setIsListening(false);
+                setCurrentListeningIndex(null);
+              };
+
+              recognition.onerror = (event) => {
+                console.error("語音辨識錯誤:", event.error);
+                if (event.error === 'not-allowed') {
+                  alert("麥克風權限被拒絕。請檢查瀏覽器設定。");
+                }
+                setIsListening(false);
+                setCurrentListeningIndex(null);
+              };
+
+              try {
+                recognition.start();
+              } catch (e) {
+                console.error("啟動語音辨識失敗:", e);
+                setIsListening(false);
+                setCurrentListeningIndex(null);
+              }
+            }
+          };
+
+          const getAIFeedback = async (question, userAnswer) => {
+            const systemPrompt = "你是位友善、鼓勵學生的英文家教。你的任務是評估學生的英文回答，並提供具體的改進建議。請盡量簡潔。就算學生的答案很簡單，也要鼓勵他們並建議一個更完整或更自然的說法。請用繁體中文回答。你的回覆必須是自然的段落，不要使用任何標題、項目符號、星號(**)或井字號(###)等 markdown 標記。";
+            
+            if (!userAnswer || userAnswer.trim() === '') {
+              return `你沒有回答喔！試著說說看：「${question.a}」`;
+            }
+
+            const questionPrompt = question.type === 'sentence_list'
+              ? `中文提示: "${question.qCh}"\n(情境是整句翻譯，標準答案是 "${question.a}")`
+              : `英文問題: "${question.q}" (中文: ${question.qCh})\n標準回答範例: "${question.a}"`;
+            
+            const userQuery = `
+              ${questionPrompt}
+              學生的回答: "${userAnswer}"
+
+              請評估學生的回答。
+              1.  回覆請盡量簡潔。
+              2.  提供簡短、鼓勵性的意見 (例如：說得不錯！)。
+              3.  如果學生的答案有誤，請溫和地修正，並說明原因。
+              4.  如果學生的答案大致正確，可以建議一個「更自然但同樣簡單」的說法。
+              5.  最後，請提供一個「簡單、完整且正確」的範例說法，讓學生參考。
+              6.  (重要) 不要提供太難或太長的句子，這些學生是初學者。
+              7.  (重要) 請用自然的段落回覆，不要使用標題、項目符號或 markdown 標記 (像是 ### 或 **)。
+            `;
+
+            // ⚠️⚠️⚠️ 注意：請在下方引號中填入您的 API Key ⚠️⚠️⚠️
+            const apiKey = ""; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+            const payload = {
+              contents: [{ parts: [{ text: userQuery }] }],
+              systemInstruction: {
+                parts: [{ text: systemPrompt }]
+              },
+            };
+
+            try {
+              let response;
+              for (let i = 0; i < 3; i++) {
+                response = await fetch(apiUrl, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(payload)
+                });
+                if (response.ok) break; 
+                if (response.status === 429) { 
+                      await new Promise(res => setTimeout(res, 1500 * (i + 1))); 
+                } else if (response.status >= 500) { 
+                    await new Promise(res => setTimeout(res, 1000 * (i + 1)));
+                }
+                else {
+                    break; 
+                }
+              }
+
+              if (!response.ok) {
+                const errorBody = await response.text();
+                console.error("API Error Response:", errorBody);
+                throw new Error(`API 請求失敗，狀態碼: ${response.status}`);
+              }
+
+              const result = await response.json();
+              const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+              if (text) {
+                return text;
+              } else {
+                console.warn("API response was successful but missing text content.", result);
+                return "抱歉，AI 分析時遇到一點小問題，回傳的內容是空的。";
+              }
+            } catch (error) {
+              console.error("Error getting AI feedback:", error);
+              return `分析失敗: ${error.message}。請檢查網路連線或稍後再試。`;
+            }
+          };
+
+          const handleQuizSubmit = async () => {
+            setSpeakingQuiz(prev => ({ ...prev, isLoading: true, feedback: Array(5).fill('') }));
+            
+            const feedbackPromises = speakingQuiz.questions.map((q, i) => 
+              getAIFeedback(q, speakingQuiz.userAnswers[i])
+            );
+            
+            const results = await Promise.allSettled(feedbackPromises);
+            
+            const newFeedback = results.map(res => 
+              res.status === 'fulfilled' ? res.value : `錯誤: ${res.reason?.message || '未知錯誤'}`
+            );
+            
+            setSpeakingQuiz(prev => ({ ...prev, isLoading: false, feedback: newFeedback }));
+          };
+
+          const handleUserAnswerChange = (index, value) => {
+            const newAnswers = [...speakingQuiz.userAnswers];
+            newAnswers[index] = value;
+            setSpeakingQuiz(prev => ({ ...prev, userAnswers: newAnswers }));
+          };
+
+
+          const speak = (text) => {
+            if ('speechSynthesis' in window) {
+              window.speechSynthesis.cancel(); 
+              const utterance = new SpeechSynthesisUtterance(text);
+              utterance.lang = 'en-US';
+
+              const voices = window.speechSynthesis.getVoices();
+              let selectedVoice = voices.find(voice => voice.name === 'Google US English');
+              if (!selectedVoice) {
+                  selectedVoice = voices.find(voice => voice.lang === 'en-US' && voice.name.toLowerCase().includes('female'));
+              }
+              if (!selectedVoice) {
+                  selectedVoice = voices.find(voice => voice.lang === 'en-US' && voice.gender === 'female');
+              }
+
+              if (selectedVoice) {
+                utterance.voice = selectedVoice;
+              }
+
+              window.speechSynthesis.speak(utterance);
+            } else {
+              console.error("Sorry, your browser doesn't support text-to-speech.");
+            }
+          };
+
+          const toggleChapter = (chapterId) => {
+            setSelectedChapters(prev =>
+                prev.includes(chapterId)
+                  ? prev.filter(id => id !== chapterId)
+                : [...prev, chapterId]
+            );
+            setCurrentQuestionIndex(0);
+            setSelectedAnswer(null);
+            setConfirmedAnswer(null);
+            setScore({ correct: 0, total: 0 });
+            setFlippedCards(new Set());
+            setSpeakingQuiz({
+              questions: [],
+              userAnswers: Array(5).fill(''),
+              feedback: Array(5).fill(''),
+              isLoading: false
+            });
+          };
+
+          const toggleFlip = (cardId) => {
+            setFlippedCards(prev => {
+              const newSet = new Set(prev);
+              if (newSet.has(cardId)) {
+                newSet.delete(cardId);
+              } else {
+                newSet.add(cardId);
+              }
+              return newSet;
+            });
+          };
+
+          const handleAnswerSelect = (answer) => {
+            if (confirmedAnswer) return;
+            setSelectedAnswer(answer);
+          };
+
+          const handleConfirm = () => {
+            if (!selectedAnswer || confirmedAnswer) return;
+                setConfirmedAnswer(selectedAnswer);
+            const isCorrect = selectedAnswer.a === currentQuestion.a;
+                if (isCorrect) {
+              setScore(prev => ({ correct: prev.correct + 1, total: prev.total + 1 }));
+            } else {
+              setScore(prev => ({ ...prev, total: prev.total + 1 }));
+            }
+                setTimeout(() => {
+              if (currentQuestionIndex < activePairs.length - 1) {
+                setCurrentQuestionIndex(prev => prev + 1);
                 setSelectedAnswer(null);
                 setConfirmedAnswer(null);
-              }}
-              className={`px-6 py-2 sm:px-8 sm:py-3 rounded-lg font-semibold transition-all ${
-                activeTab === 'practice'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              ✏️ 練習模式
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('speaking');
-                if (speakingQuiz.questions.length === 0 && activePairs.length > 0) {
-                    startNewQuiz(); // 如果測驗是空的，就載入新題目
-                }
-              }}
-              className={`px-6 py-2 sm:px-8 sm:py-3 rounded-lg font-semibold transition-all ${
-                activeTab === 'speaking'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              🗣️ 口說測驗
-            </button>
-          </div>
-        </div>
+                setFlippedCards(new Set());
+              }
+            }, 2000);
+          };
 
-        <div className="max-w-6xl mx-auto">
-          {activeTab === 'learning' ? (
-            // Learning Mode
-            <div className="space-y-8">
-              {chapters.filter(ch => selectedChapters.includes(ch.id)).map(chapter => (
-                <div key={chapter.id} className="bg-white rounded-lg shadow-xl p-4 sm:p-8">
-                  <h2 className="text-xl sm:text-2xl font-bold mb-6 text-indigo-800 border-b-2 border-indigo-200 pb-3">
-                    {chapter.name}
-                  </h2>
-                  {chapter.type === 'sentence_list' ? (
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {chapter.sentences.map((sentence, sIdx) => (
-                        <Card
-                          key={sIdx}
-                          content={sentence.en}
-                          translation={sentence.ch}
-                          id={`learn-sentence-${chapter.id}-${sIdx}`}
-                          onClick={() => toggleFlip(`learn-sentence-${chapter.id}-${sIdx}`)}
-                          speakText={speak}
-                        />
+          const Card = ({ content, translation, id, onClick, selected, isCorrect, isConfirmed, speakText, isSpeakable = true, textToSpeak }) => {
+            const isFlipped = flippedCards.has(id);
+
+            const handleSpeak = (e) => {
+                e.stopPropagation(); 
+                speakText(textToSpeak || content);
+            };
+
+                return (
+              <div
+                  className={`relative ${
+                    selected ? 'ring-4 ring-blue-400 scale-105' : ''
+                   } ${
+                    isConfirmed !== null ? (isCorrect ? 'ring-4 ring-green-500' : isConfirmed ? 'ring-4 ring-red-500' : '') : ''
+                   } w-64 h-40 sm:w-72 sm:h-48 cursor-pointer transition-all duration-300 flex items-center justify-center`}
+                onClick={onClick}
+              >
+                <div className={`absolute inset-0 transition-transform duration-500 transform preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
+                  {/* Front */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 flex items-center justify-center backface-hidden">
+                    <p className="text-white text-center font-medium text-base sm:text-lg px-4 sm:px-8">{content}</p>
+                    {isSpeakable &&
+                      <button
+                          onClick={handleSpeak}
+                          className="absolute bottom-2 right-2 p-2 rounded-full bg-black bg-opacity-20 hover:bg-opacity-40 transition-colors z-20"
+                          aria-label={`Speak: ${content}`}
+                      >
+                          <Volume2 className="text-white" size={18} />
+                      </button>
+                    }
+                  </div>
+                  {/* Back */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-lg p-4 sm:p-6 flex items-center justify-center rotate-y-180 backface-hidden">
+                    <p className="text-white text-center font-medium text-base sm:text-lg">{translation}</p>
+                  </div>
+                </div>
+                {isConfirmed !== null && (
+                  <div className="absolute -top-2 -right-2 z-10">
+                    {isCorrect ? (
+                      <div className="bg-green-500 rounded-full p-2">
+                        <Check className="text-white" size={20} />
+                      </div>
+                    ) : isConfirmed ? (
+                      <div className="bg-red-500 rounded-full p-2">
+                        <X className="text-white" size={20} />
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+            );
+          };
+
+          if (activePairs.length === 0) {
+            return (
+              <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-purple-100 p-8 flex items-center justify-center">
+                <div className="max-w-xl w-full">
+                  <h1 className="text-3xl sm:text-4xl font-bold text-center mb-8 text-indigo-900">英文口說練習系統</h1>
+                  <div className="bg-white rounded-lg shadow-xl p-4 sm:p-8">
+                    <h2 className="text-2xl font-bold mb-4 text-gray-800">請選擇章節開始學習</h2>
+                    <div className="space-y-3">
+                      {chapters.map(chapter => (
+                        <label key={chapter.id} className="flex items-center space-x-3 p-3 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedChapters.includes(chapter.id)}
+                            onChange={() => toggleChapter(chapter.id)}
+                            className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                          />
+                          <span className="text-base sm:text-lg font-medium text-gray-700">{chapter.name}</span>
+                          <span className="ml-auto text-sm text-gray-500">
+                              {chapter.type === 'sentence_list' ? `${chapter.sentences.length} 句` : `${chapter.pairs.length} 組對話`}
+                          </span>
+                        </label>
                       ))}
                     </div>
-                  ) : (
-                    <div className="space-y-6">
-                      {chapter.pairs.map((pair, idx) => (
-                        <div key={idx} className="border-2 border-gray-200 rounded-lg p-4 sm:p-6 bg-gray-50">
-                          {pair.answers.length === 1 ? (
-                            <div className="grid md:grid-cols-2 gap-6 items-center">
-                              <div>
-                                <h3 className="text-xs sm:text-sm font-semibold mb-3 text-indigo-600">問題</h3>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-purple-100">
+              {/* Sidebar Overlay for mobile */}
+              {isSidebarOpen && (
+                <div
+                    onClick={() => setIsSidebarOpen(false)}
+                    className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-20"
+                    aria-hidden="true"
+                ></div>
+              )}
+              
+              {/* Sidebar */}
+              <div className={`fixed left-0 top-0 h-full w-64 bg-white shadow-2xl p-6 overflow-y-auto z-30 transition-transform transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold text-indigo-900">章節選擇</h2>
+                    <button onClick={() => setIsSidebarOpen(false)} className="md:hidden p-1 text-gray-500 hover:text-gray-800">
+                        <X className="h-6 w-6" />
+                    </button>
+                </div>
+                <div className="space-y-3">
+                  {chapters.map(chapter => (
+                    <label key={chapter.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-indigo-50 cursor-pointer transition">
+                      <input
+                        type="checkbox"
+                        checked={selectedChapters.includes(chapter.id)}
+                        onChange={() => toggleChapter(chapter.id)}
+                        className="w-5 h-5 text-indigo-600 mt-1 rounded focus:ring-indigo-500"
+                      />
+                      <div>
+                        <span className="font-medium text-gray-800 block">{chapter.name}</span>
+                        <span className="text-xs text-gray-500">
+                          {chapter.type === 'sentence_list' ? `${chapter.sentences.length} 句` : `${chapter.pairs.length} 組對話`}
+                        </span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                {activeTab === 'practice' && (
+                  <div className="mt-8 p-4 bg-indigo-50 rounded-lg">
+                    <h3 className="font-bold text-indigo-900 mb-2">得分統計</h3>
+                    <p className="text-3xl font-bold text-indigo-600">{score.correct} / {score.total}</p>
+                    <p className="text-sm text-gray-600">正確率: {score.total > 0 ? Math.round(score.correct / score.total * 100) : 0}%</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Main Content */}
+              <div className="md:ml-64 p-4 sm:p-8">
+                {/* Hamburger Menu for Mobile */}
+                <button
+                    onClick={() => setIsSidebarOpen(true)}
+                    className="md:hidden fixed top-4 left-4 z-10 p-2 bg-white rounded-full shadow-lg text-indigo-700"
+                    aria-label="開啟章節選單"
+                >
+                    <Menu className="h-6 w-6" />
+                </button>
+
+                <h1 className="text-3xl sm:text-4xl font-bold text-center mb-8 text-indigo-900">英文口說練習系統</h1>
+                
+                    {/* Tab Navigation */}
+                <div className="flex justify-center mb-8">
+                  <div className="bg-white rounded-lg shadow-lg p-2 flex flex-col sm:flex-row gap-2">
+                    <button
+                      onClick={() => {
+                        setActiveTab('learning');
+                        setFlippedCards(new Set());
+                      }}
+                      className={`px-6 py-2 sm:px-8 sm:py-3 rounded-lg font-semibold transition-all ${
+                        activeTab === 'learning'
+                          ? 'bg-indigo-600 text-white shadow-md'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      📚 學習模式
+                    </button>
+                    <button
+                      onClick={() => {
+                        setActiveTab('practice');
+                        setFlippedCards(new Set());
+                        setSelectedAnswer(null);
+                        setConfirmedAnswer(null);
+                      }}
+                      className={`px-6 py-2 sm:px-8 sm:py-3 rounded-lg font-semibold transition-all ${
+                        activeTab === 'practice'
+                          ? 'bg-indigo-600 text-white shadow-md'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      ✏️ 練習模式
+                    </button>
+                    <button
+                      onClick={() => {
+                        setActiveTab('speaking');
+                        if (speakingQuiz.questions.length === 0 && activePairs.length > 0) {
+                            startNewQuiz(); 
+                        }
+                      }}
+                      className={`px-6 py-2 sm:px-8 sm:py-3 rounded-lg font-semibold transition-all ${
+                        activeTab === 'speaking'
+                          ? 'bg-indigo-600 text-white shadow-md'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      🗣️ 口說測驗
+                    </button>
+                  </div>
+                </div>
+
+                <div className="max-w-6xl mx-auto">
+                  {activeTab === 'learning' ? (
+                    // Learning Mode
+                    <div className="space-y-8">
+                      {chapters.filter(ch => selectedChapters.includes(ch.id)).map(chapter => (
+                        <div key={chapter.id} className="bg-white rounded-lg shadow-xl p-4 sm:p-8">
+                          <h2 className="text-xl sm:text-2xl font-bold mb-6 text-indigo-800 border-b-2 border-indigo-200 pb-3">
+                            {chapter.name}
+                          </h2>
+                          {chapter.type === 'sentence_list' ? (
+                            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                              {chapter.sentences.map((sentence, sIdx) => (
                                 <Card
-                                  content={pair.q}
-                                  translation={pair.qCh}
-                                  id={`learn-q-${chapter.id}-${idx}`}
-                                  onClick={() => toggleFlip(`learn-q-${chapter.id}-${idx}`)}
+                                  key={sIdx}
+                                  content={sentence.en}
+                                  translation={sentence.ch}
+                                  id={`learn-sentence-${chapter.id}-${sIdx}`}
+                                  onClick={() => toggleFlip(`learn-sentence-${chapter.id}-${sIdx}`)}
                                   speakText={speak}
                                 />
-                              </div>
-                              <div>
-                                <h3 className="text-xs sm:text-sm font-semibold mb-3 text-green-600">回答</h3>
-                                <Card
-                                  content={pair.answers[0].a}
-                                  translation={pair.answers[0].aCh}
-                                  id={`learn-a-${chapter.id}-${idx}-0`}
-                                  onClick={() => toggleFlip(`learn-a-${chapter.id}-${idx}-0`)}
-                                  speakText={speak}
-                                />
-                              </div>
+                              ))}
                             </div>
                           ) : (
                             <div className="space-y-6">
-                              <div>
-                                <h3 className="text-xs sm:text-sm font-semibold mb-3 text-indigo-600">問題</h3>
-                                <Card
-                                  content={pair.q}
-                                  translation={pair.qCh}
-                                  id={`learn-q-${chapter.id}-${idx}`}
-                                  onClick={() => toggleFlip(`learn-q-${chapter.id}-${idx}`)}
-                                  speakText={speak}
-                                />
-                              </div>
-                              <div>
-                                <h3 className="text-xs sm:text-sm font-semibold mb-3 text-green-600">回答</h3>
-                                <div className="grid sm:grid-cols-2 gap-4">
-                                  {pair.answers.map((answer, ansIdx) => (
-                                    <Card
-                                      key={ansIdx}
-                                      content={answer.a}
-                                      translation={answer.aCh}
-                                      id={`learn-a-${chapter.id}-${idx}-${ansIdx}`}
-                                      onClick={() => toggleFlip(`learn-a-${chapter.id}-${idx}-${ansIdx}`)}
-                                      speakText={speak}
-                                    />
-                                  ))}
+                              {chapter.pairs.map((pair, idx) => (
+                                <div key={idx} className="border-2 border-gray-200 rounded-lg p-4 sm:p-6 bg-gray-50">
+                                  {pair.answers.length === 1 ? (
+                                    <div className="grid md:grid-cols-2 gap-6 items-center">
+                                      <div>
+                                        <h3 className="text-xs sm:text-sm font-semibold mb-3 text-indigo-600">問題</h3>
+                                        <Card
+                                          content={pair.q}
+                                          translation={pair.qCh}
+                                          id={`learn-q-${chapter.id}-${idx}`}
+                                          onClick={() => toggleFlip(`learn-q-${chapter.id}-${idx}`)}
+                                          speakText={speak}
+                                        />
+                                      </div>
+                                      <div>
+                                        <h3 className="text-xs sm:text-sm font-semibold mb-3 text-green-600">回答</h3>
+                                        <Card
+                                          content={pair.answers[0].a}
+                                          translation={pair.answers[0].aCh}
+                                          id={`learn-a-${chapter.id}-${idx}-0`}
+                                          onClick={() => toggleFlip(`learn-a-${chapter.id}-${idx}-0`)}
+                                          speakText={speak}
+                                        />
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="space-y-6">
+                                      <div>
+                                        <h3 className="text-xs sm:text-sm font-semibold mb-3 text-indigo-600">問題</h3>
+                                        <Card
+                                          content={pair.q}
+                                          translation={pair.qCh}
+                                          id={`learn-q-${chapter.id}-${idx}`}
+                                          onClick={() => toggleFlip(`learn-q-${chapter.id}-${idx}`)}
+                                          speakText={speak}
+                                        />
+                                      </div>
+                                      <div>
+                                        <h3 className="text-xs sm:text-sm font-semibold mb-3 text-green-600">回答</h3>
+                                        <div className="grid sm:grid-cols-2 gap-4">
+                                          {pair.answers.map((answer, ansIdx) => (
+                                            <Card
+                                              key={ansIdx}
+                                              content={answer.a}
+                                              translation={answer.aCh}
+                                              id={`learn-a-${chapter.id}-${idx}-${ansIdx}`}
+                                              onClick={() => toggleFlip(`learn-a-${chapter.id}-${idx}-${ansIdx}`)}
+                                              speakText={speak}
+                                            />
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
-                              </div>
+                              ))}
                             </div>
                           )}
                         </div>
                       ))}
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : activeTab === 'practice' ? (
-            // Practice Mode
-            <div className="bg-white rounded-lg shadow-xl p-4 sm:p-8 mb-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-800">練習模式</h2>
-                <span className="text-base sm:text-lg text-gray-600">第 {currentQuestionIndex + 1} / {activePairs.length} 題</span>
-              </div>
-
-              {/* Bonus Practice Type Selector */}
-              {currentQuestion?.type === 'sentence_list' && (
-                <div className="flex justify-center items-center mb-6 p-3 bg-indigo-50 rounded-lg space-x-2 sm:space-x-4">
-                  <span className="font-semibold text-gray-700 text-sm sm:text-base hidden sm:block">Bonus 練習方式:</span>
-                  <button onClick={() => setBonusPracticeType('seeChinese_chooseEnglish')} className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition-all ${bonusPracticeType === 'seeChinese_chooseEnglish' ? 'bg-indigo-600 text-white shadow' : 'bg-white text-gray-600 hover:bg-gray-100'}`}>
-                    看中選英
-                  </button>
-                  <button onClick={() => setBonusPracticeType('listenEnglish_chooseChinese')} className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition-all ${bonusPracticeType === 'listenEnglish_chooseChinese' ? 'bg-indigo-600 text-white shadow' : 'bg-white text-gray-600 hover:bg-gray-100'}`}>
-                    聽英選中
-                  </button>
-                </div>
-              )}
-
-              {/* Question Card */}
-              <div className="flex justify-center mb-8">
-                <div>
-                  <h3 className="text-lg sm:text-xl font-semibold mb-4 text-center text-indigo-700">
-                     {currentQuestion?.type === 'sentence_list' && bonusPracticeType === 'seeChinese_chooseEnglish'
-                      ? "問題 (看中文選英文)"
-                      : currentQuestion?.type === 'sentence_list' && bonusPracticeType === 'listenEnglish_chooseChinese'
-                      ? "問題 (聽英文選中文)"
-                      : "問題 (點擊翻面看中文)"}
-                  </h3>
-                  <Card
-                    content={
-                      currentQuestion?.type === 'sentence_list' && bonusPracticeType === 'seeChinese_chooseEnglish'
-                        ? currentQuestion.qCh
-                        : currentQuestion?.type === 'sentence_list' && bonusPracticeType === 'listenEnglish_chooseChinese'
-                        ? "點擊喇叭圖示聆聽"
-                        : currentQuestion.q
-                    }
-                    translation={
-                      currentQuestion?.type === 'sentence_list' && bonusPracticeType === 'seeChinese_chooseEnglish'
-                        ? currentQuestion.q
-                        : currentQuestion.qCh
-                    }
-                    id={`q-${currentQuestionIndex}`}
-                    onClick={() => toggleFlip(`q-${currentQuestionIndex}`)}
-                    speakText={speak}
-                    textToSpeak={currentQuestion.q} // Always prepare to speak the english question
-                    isSpeakable={!(currentQuestion?.type === 'sentence_list' && bonusPracticeType === 'seeChinese_chooseEnglish')}
-                  />
-                </div>
-              </div>
-              {/* Answer Cards */}
-              <div>
-                <h3 className="text-lg sm:text-xl font-semibold mb-4 text-center text-indigo-700">
-                  {currentQuestion?.type === 'sentence_list' && bonusPracticeType === 'listenEnglish_chooseChinese'
-                    ? "選擇正確的中文翻譯"
-                    : "選擇正確的回答 (點擊卡片可翻面看中文)"}
-                </h3>
-                <div className="grid md:grid-cols-3 gap-6 justify-items-center mb-6">
-                  {shuffledAnswers.map((pair, idx) => (
-                    <Card
-                      key={idx}
-                      content={
-                        currentQuestion?.type === 'sentence_list' && bonusPracticeType === 'listenEnglish_chooseChinese'
-                        ? pair.aCh
-                        : pair.a
-                      }
-                      translation={
-                        currentQuestion?.type === 'sentence_list' && bonusPracticeType === 'listenEnglish_chooseChinese'
-                        ? pair.a
-                        : pair.aCh
-                      }
-                      id={`a-${idx}`}
-                      onClick={() => {
-                        if (!confirmedAnswer) {
-                          if (selectedAnswer === pair) {
-                            toggleFlip(`a-${idx}`);
-                          } else {
-                            handleAnswerSelect(pair);
-                          }
-                        }
-                      }}
-                      selected={selectedAnswer === pair}
-                      isConfirmed={confirmedAnswer === pair ? true : null}
-                      isCorrect={confirmedAnswer === pair && pair.a === currentQuestion.a}
-                      speakText={speak}
-                      textToSpeak={pair.a} // Always prepare to speak the english answer
-                      isSpeakable={!(currentQuestion?.type === 'sentence_list' && bonusPracticeType === 'listenEnglish_chooseChinese')}
-                    />
-                  ))}
-                </div>
-                                
-                {/* Confirm Button */}
-                <div className="flex justify-center">
-                  <button
-                    onClick={handleConfirm}
-                    disabled={!selectedAnswer || confirmedAnswer}
-                    className={`px-8 py-3 rounded-lg font-semibold text-base sm:text-lg transition-all ${
-                      selectedAnswer && !confirmedAnswer
-                        ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg hover:shadow-xl'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }`}
-                  >
-                    確定答案
-                  </button>
-                </div>
-              </div>
-              {currentQuestionIndex === activePairs.length - 1 && confirmedAnswer && (
-                <div className="mt-6 p-4 bg-green-100 rounded-lg text-center">
-                  <p className="text-lg sm:text-xl font-bold text-green-800">🎉 恭喜完成所有題目！</p>
-                  <p className="text-base sm:text-lg text-green-700 mt-2">最終得分: {score.correct} / {score.total}</p>
-                </div>
-              )}
-            </div>
-          ) : activeTab === 'speaking' ? (
-            // Speaking Mode
-            <div className="bg-white rounded-lg shadow-xl p-4 sm:p-8 mb-6">
-              <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-                <div>
-                  <h2 className="text-xl sm:text-2xl font-bold text-gray-800">口說測驗 (模擬)</h2>
-                  <p className="text-sm text-gray-600 mt-1">
-                    由於瀏覽器限制，請在此輸入您會「說」出的英文答案，AI 將提供改進建議。
-                  </p>
-                </div>
-                <button
-                  onClick={startNewQuiz}
-                  disabled={speakingQuiz.isLoading}
-                  className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg font-semibold hover:bg-indigo-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  換一組題目
-                </button>
-              </div>
-
-              {(speakingQuiz.questions.length === 0 || activePairs.length === 0) ? (
-                 <p className="text-center text-gray-500 py-10">請先在左側「章節選擇」中勾選您想練習的章節。</p>
-              ) : (
-                <div className="space-y-6">
-                  {speakingQuiz.questions.map((q, index) => (
-                    <div key={index} className="border border-gray-200 rounded-lg p-4 transition-all duration-300">
-                      <p className="font-semibold text-gray-700 mb-3">第 {index + 1} 題</p>
-                      {/* Question Prompt */}
-                      <div className="bg-gray-50 p-4 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                         {q.type === 'sentence_list' ? (
-                           <div>
-                             {/* --- 這是修改的部分 --- */}
-                             <p className="text-sm font-bold text-red-600">請翻譯以下中文：</p>
-                             <p className="text-lg font-medium text-gray-800 mt-1">{q.qCh}</p>
-                             {/* --- 修改結束 --- */}
-                           </div>
-                         ) : (
-                           <div>
-                             {/* --- 這是修改的部分 --- */}
-                             <p className="text-sm font-bold text-blue-700">請回答以下問題：</p>
-                             <p className="text-lg font-medium text-gray-800 mt-1">{q.q}</p>
-                             {/* --- 修改結束 --- */}
-                             <p className="text-sm text-gray-500">{q.qCh}</p>
-                           </div>
-                         )}
-                         <button
-                           onClick={() => speak(q.a)}
-                           className="flex-shrink-0 flex items-center gap-1 px-3 py-1 bg-white border border-gray-300 rounded-full text-sm text-gray-700 hover:bg-gray-100 transition"
-                           title={q.type === 'sentence_list' ? "聽聽看英文" : "聽聽看參考答案"}
-                         >
-                           <Volume2 size={16} /> {q.type === 'sentence_list' ? "聽英文" : "聽答案"}
-                         </button>
+                  ) : activeTab === 'practice' ? (
+                    // Practice Mode
+                    <div className="bg-white rounded-lg shadow-xl p-4 sm:p-8 mb-6">
+                      <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl sm:text-2xl font-bold text-gray-800">練習模式</h2>
+                        <span className="text-base sm:text-lg text-gray-600">第 {currentQuestionIndex + 1} / {activePairs.length} 題</span>
                       </div>
-                      
-                      {/* User Input */}
-                      <div className="mt-4">
-                        <label htmlFor={`answer-${index}`} className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                          <Mic size={16} className="text-blue-500" />
-                          請在此輸入您的英文回答 (或使用麥克風)：
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <textarea
-                            id={`answer-${index}`}
-                            rows={2}
-                            className="w-full flex-grow p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:bg-gray-100"
-                            placeholder="請輸入您會...說出的英文"
-                            value={speakingQuiz.userAnswers[index]}
-                            onChange={(e) => handleUserAnswerChange(index, e.target.value)}
-                            disabled={speakingQuiz.isLoading}
+
+                      {/* Bonus Practice Type Selector */}
+                      {currentQuestion?.type === 'sentence_list' && (
+                        <div className="flex justify-center items-center mb-6 p-3 bg-indigo-50 rounded-lg space-x-2 sm:space-x-4">
+                          <span className="font-semibold text-gray-700 text-sm sm:text-base hidden sm:block">Bonus 練習方式:</span>
+                          <button onClick={() => setBonusPracticeType('seeChinese_chooseEnglish')} className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition-all ${bonusPracticeType === 'seeChinese_chooseEnglish' ? 'bg-indigo-600 text-white shadow' : 'bg-white text-gray-600 hover:bg-gray-100'}`}>
+                            看中選英
+                          </button>
+                          <button onClick={() => setBonusPracticeType('listenEnglish_chooseChinese')} className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition-all ${bonusPracticeType === 'listenEnglish_chooseChinese' ? 'bg-indigo-600 text-white shadow' : 'bg-white text-gray-600 hover:bg-gray-100'}`}>
+                            聽英選中
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Question Card */}
+                      <div className="flex justify-center mb-8">
+                        <div>
+                          <h3 className="text-lg sm:text-xl font-semibold mb-4 text-center text-indigo-700">
+                             {currentQuestion?.type === 'sentence_list' && bonusPracticeType === 'seeChinese_chooseEnglish'
+                              ? "問題 (看中文選英文)"
+                              : currentQuestion?.type === 'sentence_list' && bonusPracticeType === 'listenEnglish_chooseChinese'
+                              ? "問題 (聽英文選中文)"
+                              : "問題 (點擊翻面看中文)"}
+                          </h3>
+                          <Card
+                            content={
+                              currentQuestion?.type === 'sentence_list' && bonusPracticeType === 'seeChinese_chooseEnglish'
+                                ? currentQuestion.qCh
+                                : currentQuestion?.type === 'sentence_list' && bonusPracticeType === 'listenEnglish_chooseChinese'
+                                ? "點擊喇叭圖示聆聽"
+                                : currentQuestion.q
+                            }
+                            translation={
+                              currentQuestion?.type === 'sentence_list' && bonusPracticeType === 'seeChinese_chooseEnglish'
+                                ? currentQuestion.q
+                                : currentQuestion.qCh
+                            }
+                            id={`q-${currentQuestionIndex}`}
+                            onClick={() => toggleFlip(`q-${currentQuestionIndex}`)}
+                            speakText={speak}
+                            textToSpeak={currentQuestion.q} 
+                            isSpeakable={!(currentQuestion?.type === 'sentence_list' && bonusPracticeType === 'seeChinese_chooseEnglish')}
                           />
+                        </div>
+                      </div>
+                      {/* Answer Cards */}
+                      <div>
+                        <h3 className="text-lg sm:text-xl font-semibold mb-4 text-center text-indigo-700">
+                          {currentQuestion?.type === 'sentence_list' && bonusPracticeType === 'listenEnglish_chooseChinese'
+                            ? "選擇正確的中文翻譯"
+                            : "選擇正確的回答 (點擊卡片可翻面看中文)"}
+                        </h3>
+                        <div className="grid md:grid-cols-3 gap-6 justify-items-center mb-6">
+                          {shuffledAnswers.map((pair, idx) => (
+                            <Card
+                              key={idx}
+                              content={
+                                currentQuestion?.type === 'sentence_list' && bonusPracticeType === 'listenEnglish_chooseChinese'
+                                ? pair.aCh
+                                : pair.a
+                              }
+                              translation={
+                                currentQuestion?.type === 'sentence_list' && bonusPracticeType === 'listenEnglish_chooseChinese'
+                                ? pair.a
+                                : pair.aCh
+                              }
+                              id={`a-${idx}`}
+                              onClick={() => {
+                                if (!confirmedAnswer) {
+                                  if (selectedAnswer === pair) {
+                                    toggleFlip(`a-${idx}`);
+                                  } else {
+                                    handleAnswerSelect(pair);
+                                  }
+                                }
+                              }}
+                              selected={selectedAnswer === pair}
+                              isConfirmed={confirmedAnswer === pair ? true : null}
+                              isCorrect={confirmedAnswer === pair && pair.a === currentQuestion.a}
+                              speakText={speak}
+                              textToSpeak={pair.a} 
+                              isSpeakable={!(currentQuestion?.type === 'sentence_list' && bonusPracticeType === 'listenEnglish_chooseChinese')}
+                            />
+                          ))}
+                        </div>
+                                        
+                        {/* Confirm Button */}
+                        <div className="flex justify-center">
                           <button
-                            type="button"
-                            onClick={() => toggleListening(index)}
-                            disabled={speakingQuiz.isLoading || (isListening && currentListeningIndex !== index)}
-                            className={`flex-shrink-0 p-3 rounded-lg text-white transition-all duration-200 ${
-                              isListening && currentListeningIndex === index
-                                ? 'bg-red-500 hover:bg-red-600 animate-pulse' // 正在錄音
-                                : 'bg-blue-500 hover:bg-blue-600' // 準備錄音
-                            } ${
-                              (speakingQuiz.isLoading || (isListening && currentListeningIndex !== index))
-                                ? 'opacity-50 cursor-not-allowed'
-                                : ''
+                            onClick={handleConfirm}
+                            disabled={!selectedAnswer || confirmedAnswer}
+                            className={`px-8 py-3 rounded-lg font-semibold text-base sm:text-lg transition-all ${
+                              selectedAnswer && !confirmedAnswer
+                                ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg hover:shadow-xl'
+                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                             }`}
-                            title={isListening && currentListeningIndex === index ? "停止錄音" : "開始錄音"}
                           >
-                            {isListening && currentListeningIndex === index ? (
-                              <Loader2 className="animate-spin" size={20} />
-                            ) : (
-                              <Mic size={20} />
-                            )}
+                            確定答案
                           </button>
                         </div>
                       </div>
-                      
-                      {/* Feedback */}
-                      {speakingQuiz.isLoading && !speakingQuiz.feedback[index] && (
-                        <div className="mt-4 p-4 bg-gray-50 rounded-lg flex items-center justify-center">
-                          <Loader2 className="animate-spin text-gray-400" size={24} />
-                          <p className="ml-2 text-gray-500">AI 老師評分中...</p>
-                        </div>
-                      )}
-                      {speakingQuiz.feedback[index] && (
-                        <div className="mt-4 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
-                          <h4 className="font-semibold text-indigo-800 mb-2">AI 老師建議：</h4>
-                          <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">{speakingQuiz.feedback[index]}</p>
+                      {currentQuestionIndex === activePairs.length - 1 && confirmedAnswer && (
+                        <div className="mt-6 p-4 bg-green-100 rounded-lg text-center">
+                          <p className="text-lg sm:text-xl font-bold text-green-800">🎉 恭喜完成所有題目！</p>
+                          <p className="text-base sm:text-lg text-green-700 mt-2">最終得分: {score.correct} / {score.total}</p>
                         </div>
                       )}
                     </div>
-                  ))}
-                  
-                  {/* Submit Button */}
-                  <div className="flex justify-center mt-8">
-                    <button
-                      onClick={handleQuizSubmit}
-                      disabled={speakingQuiz.isLoading || speakingQuiz.userAnswers.every(a => a === '')}
-                      className="flex items-center justify-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-lg font-semibold text-lg hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
-                    >
-                      {speakingQuiz.isLoading ? (
-                        <>
-                          <Loader2 className="animate-spin" size={20} />
-                          批改中...
-                        </>
-                      ) : (
-                        "送出批改"
-                      )}
-                    </button>
-                  </div>
-                  
-                </div>
-              )}
-            </div>
-          ) : null}
-        </div>
-      </div>
-      <style>{`
-        .rotate-y-180 {
-          transform: rotateY(180deg);
-        }
-      `}</style>
-    </div>
-  );
-};
+                  ) : activeTab === 'speaking' ? (
+                    // Speaking Mode
+                    <div className="bg-white rounded-lg shadow-xl p-4 sm:p-8 mb-6">
+                      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                        <div>
+                          <h2 className="text-xl sm:text-2xl font-bold text-gray-800">口說測驗 (模擬)</h2>
+                          <p className="text-sm text-gray-600 mt-1">
+                            由於瀏覽器限制，請在此輸入您會「說」出的英文答案，AI 將提供改進建議。
+                          </p>
+                        </div>
+                        <button
+                          onClick={startNewQuiz}
+                          disabled={speakingQuiz.isLoading}
+                          className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg font-semibold hover:bg-indigo-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          換一組題目
+                        </button>
+                      </div>
 
-export default App;
+                      {(speakingQuiz.questions.length === 0 || activePairs.length === 0) ? (
+                         <p className="text-center text-gray-500 py-10">請先在左側「章節選擇」中勾選您想練習的章節。</p>
+                      ) : (
+                        <div className="space-y-6">
+                          {speakingQuiz.questions.map((q, index) => (
+                            <div key={index} className="border border-gray-200 rounded-lg p-4 transition-all duration-300">
+                              <p className="font-semibold text-gray-700 mb-3">第 {index + 1} 題</p>
+                              {/* Question Prompt */}
+                              <div className="bg-gray-50 p-4 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                                 {q.type === 'sentence_list' ? (
+                                   <div>
+                                     <p className="text-sm font-bold text-red-600">請翻譯以下中文：</p>
+                                     <p className="text-lg font-medium text-gray-800 mt-1">{q.qCh}</p>
+                                   </div>
+                                 ) : (
+                                   <div>
+                                     <p className="text-sm font-bold text-blue-700">請回答以下問題：</p>
+                                     <p className="text-lg font-medium text-gray-800 mt-1">{q.q}</p>
+                                     <p className="text-sm text-gray-500">{q.qCh}</p>
+                                   </div>
+                                 )}
+                                 <button
+                                   onClick={() => speak(q.a)}
+                                   className="flex-shrink-0 flex items-center gap-1 px-3 py-1 bg-white border border-gray-300 rounded-full text-sm text-gray-700 hover:bg-gray-100 transition"
+                                   title={q.type === 'sentence_list' ? "聽聽看英文" : "聽聽看參考答案"}
+                                 >
+                                   <Volume2 size={16} /> {q.type === 'sentence_list' ? "聽英文" : "聽答案"}
+                                 </button>
+                              </div>
+                              
+                              {/* User Input */}
+                              <div className="mt-4">
+                                <label htmlFor={`answer-${index}`} className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                  <Mic size={16} className="text-blue-500" />
+                                  請在此輸入您的英文回答 (或使用麥克風)：
+                                </label>
+                                <div className="flex items-center gap-2">
+                                  <textarea
+                                    id={`answer-${index}`}
+                                    rows={2}
+                                    className="w-full flex-grow p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:bg-gray-100"
+                                    placeholder="請輸入您會...說出的英文"
+                                    value={speakingQuiz.userAnswers[index]}
+                                    onChange={(e) => handleUserAnswerChange(index, e.target.value)}
+                                    disabled={speakingQuiz.isLoading}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleListening(index)}
+                                    disabled={speakingQuiz.isLoading || (isListening && currentListeningIndex !== index)}
+                                    className={`flex-shrink-0 p-3 rounded-lg text-white transition-all duration-200 ${
+                                      isListening && currentListeningIndex === index
+                                        ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
+                                        : 'bg-blue-500 hover:bg-blue-600' 
+                                    } ${
+                                      (speakingQuiz.isLoading || (isListening && currentListeningIndex !== index))
+                                        ? 'opacity-50 cursor-not-allowed'
+                                        : ''
+                                    }`}
+                                    title={isListening && currentListeningIndex === index ? "停止錄音" : "開始錄音"}
+                                  >
+                                    {isListening && currentListeningIndex === index ? (
+                                      <Loader2 className="animate-spin" size={20} />
+                                    ) : (
+                                      <Mic size={20} />
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+                              
+                              {/* Feedback */}
+                              {speakingQuiz.isLoading && !speakingQuiz.feedback[index] && (
+                                <div className="mt-4 p-4 bg-gray-50 rounded-lg flex items-center justify-center">
+                                  <Loader2 className="animate-spin text-gray-400" size={24} />
+                                  <p className="ml-2 text-gray-500">AI 老師評分中...</p>
+                                </div>
+                              )}
+                              {speakingQuiz.feedback[index] && (
+                                <div className="mt-4 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+                                  <h4 className="font-semibold text-indigo-800 mb-2">AI 老師建議：</h4>
+                                  <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">{speakingQuiz.feedback[index]}</p>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                          
+                          {/* Submit Button */}
+                          <div className="flex justify-center mt-8">
+                            <button
+                              onClick={handleQuizSubmit}
+                              disabled={speakingQuiz.isLoading || speakingQuiz.userAnswers.every(a => a === '')}
+                              className="flex items-center justify-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-lg font-semibold text-lg hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            >
+                              {speakingQuiz.isLoading ? (
+                                <>
+                                  <Loader2 className="animate-spin" size={20} />
+                                  批改中...
+                                </>
+                              ) : (
+                                "送出批改"
+                              )}
+                            </button>
+                          </div>
+                          
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
